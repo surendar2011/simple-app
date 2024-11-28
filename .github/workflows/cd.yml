@@ -1,9 +1,43 @@
+# name: CD
+
+# on:
+#   push:
+#     branches:
+#       - master
+
+# jobs:
+#   build-and-push:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: Check out the code
+#       uses: actions/checkout@v2
+
+#     - name: Set up Docker Buildx
+#       uses: docker/setup-buildx-action@v2
+
+#     - name: Log in to Docker Hub
+#       uses: docker/login-action@v2
+#       with:
+#         username: ${{ secrets.DOCKER_USERNAME }}
+#         password: ${{ secrets.DOCKER_PASSWORD }}
+
+#     - name: Build Docker image
+#       run: |
+#         docker build -t surendar2011/simple-app:latest .
+#         docker tag surendar2011/simple-app:latest surendar2011/simple-app:${GITHUB_SHA}
+
+#     - name: Push Docker image
+#       run: |
+#         docker push surendar2011/simple-app:latest
+#         docker push surendar2011/simple-app:${GITHUB_SHA}
+
 name: CD
 
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build-and-push:
@@ -22,12 +56,36 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
+    - name: Get Latest Version Tag
+      id: get_version
+      run: |
+        # Check if any tags exist in the repo
+        TAGS=$(git tag -l)
+        
+        if [[ -z "$TAGS" ]]; then
+          # No tags exist, set to initial version
+          VERSION="v1.1.1"
+        else
+          # Get the latest tag and increment the patch version
+          VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
+          echo "Latest tag is $VERSION"
+
+          # Increment the patch version (e.g., v1.1.1 -> v1.1.2)
+          VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF++;print}')
+        fi
+
+        echo "New version will be $VERSION"
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+
     - name: Build Docker image
       run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/simple-app:latest .
-        docker tag ${{ secrets.DOCKER_USERNAME }}/simple-app:latest ${{ secrets.DOCKER_USERNAME }}/simple-app:${GITHUB_SHA}
+        # Use the version from the previous step
+        docker build -t surendar2011/simple-app:${{ env.VERSION }} .
+        docker tag surendar2011/simple-app:${{ env.VERSION }} surendar2011/simple-app:latest
 
     - name: Push Docker image
       run: |
-        docker push ${{ secrets.DOCKER_USERNAME }}/simple-app:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/simple-app:${GITHUB_SHA}
+        docker push surendar2011/simple-app:${{ env.VERSION }}
+        docker push surendar2011/simple-app:latest
+
+
