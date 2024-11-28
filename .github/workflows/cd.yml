@@ -1,45 +1,9 @@
-# name: CD
-
-# on:
-#   push:
-#     branches:
-#       - master
-
-# jobs:
-#   build-and-push:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#     - name: Check out the code
-#       uses: actions/checkout@v2
-
-#     - name: Set up Docker Buildx
-#       uses: docker/setup-buildx-action@v2
-
-#     - name: Log in to Docker Hub
-#       uses: docker/login-action@v2
-#       with:
-#         username: ${{ secrets.DOCKER_USERNAME }}
-#         password: ${{ secrets.DOCKER_PASSWORD }}
-
-#     - name: Build Docker image
-#       run: |
-#         docker build -t surendar2011/simple-app:latest .
-#         docker tag surendar2011/simple-app:latest surendar2011/simple-app:${GITHUB_SHA}
-
-#     - name: Push Docker image
-#       run: |
-#         docker push surendar2011/simple-app:latest
-#         docker push surendar2011/simple-app:${GITHUB_SHA}
-
 name: CD
 
 on:
   push:
     branches:
       - master
-    tags:
-      - 'v*.*.*'  # Match any tag with the format v1.1.1, v1.1.2, etc.
 
 jobs:
   build-and-push:
@@ -58,31 +22,12 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Get Latest Version Tag
-      id: get_version
-      run: |
-        echo "Listing all tags:"
-        git tag -l  # List all tags to ensure they're recognized
-        TAGS=$(git tag -l)
-        
-        if [[ -z "$TAGS" ]]; then
-          VERSION="v1.1.1"
-        else
-          VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo "Latest tag is $VERSION"
-          VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF++;print}')
-        fi
-        
-        echo "New version will be $VERSION"
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-
     - name: Build Docker image
       run: |
-        docker build -t surendar2011/simple-app:${{ env.VERSION }} .
-        docker tag surendar2011/simple-app:${{ env.VERSION }} surendar2011/simple-app:latest
+        docker build -t surendar2011/simple-app:latest .
+        docker tag surendar2011/simple-app:latest surendar2011/simple-app:${GITHUB_SHA}
 
     - name: Push Docker image
       run: |
-        docker push surendar2011/simple-app:${{ env.VERSION }}
         docker push surendar2011/simple-app:latest
-
+        docker push surendar2011/simple-app:${GITHUB_SHA}
