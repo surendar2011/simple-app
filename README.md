@@ -1,7 +1,3 @@
-Here's a polished version of your GitHub README, written to reflect a more senior-level tone and organization:
-
----
-
 # Simple App
 
 ## Description
