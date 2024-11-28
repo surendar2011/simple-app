@@ -38,6 +38,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - 'v*.*.*'  # Match any tag with the format v1.1.1, v1.1.2, etc.
 
 jobs:
   build-and-push:
@@ -59,27 +61,23 @@ jobs:
     - name: Get Latest Version Tag
       id: get_version
       run: |
-        # Check if any tags exist in the repo
+        echo "Listing all tags:"
+        git tag -l  # List all tags to ensure they're recognized
         TAGS=$(git tag -l)
         
         if [[ -z "$TAGS" ]]; then
-          # No tags exist, set to initial version
           VERSION="v1.1.1"
         else
-          # Get the latest tag and increment the patch version
           VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
           echo "Latest tag is $VERSION"
-
-          # Increment the patch version (e.g., v1.1.1 -> v1.1.2)
           VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF++;print}')
         fi
-
+        
         echo "New version will be $VERSION"
         echo "VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Build Docker image
       run: |
-        # Use the version from the previous step
         docker build -t surendar2011/simple-app:${{ env.VERSION }} .
         docker tag surendar2011/simple-app:${{ env.VERSION }} surendar2011/simple-app:latest
 
@@ -87,5 +85,4 @@ jobs:
       run: |
         docker push surendar2011/simple-app:${{ env.VERSION }}
         docker push surendar2011/simple-app:latest
-
 
