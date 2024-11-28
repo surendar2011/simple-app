@@ -59,19 +59,22 @@ jobs:
     - name: Get Latest Version Tag
       id: get_version
       run: |
-        # Get the latest tag or default to v1.1.1 if no tag exists
-        VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
-        echo "Latest tag is $VERSION"
+        # Check if any tags exist in the repo
+        TAGS=$(git tag -l)
         
-        if [[ -z "$VERSION" ]]; then
-          VERSION="v1.1.1"  # If no tag exists, start with v1.1.1
+        if [[ -z "$TAGS" ]]; then
+          # No tags exist, set to initial version
+          VERSION="v1.1.1"
         else
-          # Increment the patch version (simplified version increment)
+          # Get the latest tag and increment the patch version
+          VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
+          echo "Latest tag is $VERSION"
+
+          # Increment the patch version (e.g., v1.1.1 -> v1.1.2)
           VERSION=$(echo $VERSION | awk -F. -v OFS=. '{$NF++;print}')
         fi
+
         echo "New version will be $VERSION"
-        
-        # Set the version for use in subsequent steps
         echo "VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Build Docker image
@@ -84,4 +87,5 @@ jobs:
       run: |
         docker push surendar2011/simple-app:${{ env.VERSION }}
         docker push surendar2011/simple-app:latest
+
 
